@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Room | Quiz App</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #1d2671, #c33764);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    #roomCodeDisplay {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #ffeb3b;
+    }
+
+    label, select {
+      margin-top: 20px;
+      font-size: 1.1rem;
+    }
+
+    select {
+      padding: 8px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      margin-top: 30px;
+      padding: 12px 24px;
+      background-color: #ff4081;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #f50057;
+    }
+  </style>
+</head>
+<body>
+  <h2>🎉 Room Created Successfully!</h2>
+  <p>Share this room code with your friend:</p>
+  <p id="roomCodeDisplay">Generating...</p>
+
+  <label for="category">Choose Quiz Category:</label><br>
+  <select id="category">
+    <option value="Computer Science">Computer Science</option>
+    <option value="DSA">DSA</option>
+    <option value="Output Prediction">Output Prediction</option>
+    <option value="Syntactical Error">Syntactical Error</option>
+    <option value="Basic Programming">Basic Programming</option>
+    <option value="General Knowledge">General Knowledge</option>
+  </select>
+
+  <br><br>
+  <button id="startButton" style="display:none">🚀 Start Game</button>
+
+  <script>
+    const socket = io("http://localhost:5000");
+
+    async function createRoom() {
+      try {
+        const response = await fetch('http://localhost:5000/api/create-room', {
+          method: 'POST',
+        });
+
+        if (!response.ok) {
+          const err = await response.text();
+          alert("Server error: " + err);
+          return;
+        }
+
+        const data = await response.json();
+        const roomCode = data.roomCode;
+
+        document.getElementById('roomCodeDisplay').innerText = roomCode;
+
+        localStorage.setItem("roomCode", roomCode);
+        localStorage.setItem("isUser1", "true");
+
+        socket.emit("join-room", roomCode);
+        console.log("User1 joined room:", roomCode);
+
+        // Show start button when second player joins
+        socket.on("room-ready", () => {
+          console.log("Both users joined. Showing start button.");
+          const startBtn = document.getElementById("startButton");
+          startBtn.style.display = "inline-block";
+        });
+
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+
+    function startGame() {
+      const roomCode = localStorage.getItem("roomCode");
+      const category = document.getElementById("category").value;
+
+      localStorage.setItem("selectedCategory", category);
+
+      socket.emit("start-game", {
+        roomCode,
+        category,
+      });
+
+      window.location.href = `quiz.html?room=${roomCode}&category=${encodeURIComponent(category)}`;
+    }
+
+    document.getElementById("startButton").addEventListener("click", startGame);
+
+    createRoom();
+  </script>
+</body>
+</html>

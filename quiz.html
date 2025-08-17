@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quiz Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container { max-width: 500px; width: 100%; }
+    .card {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease-in-out;
+    }
+    .card:hover { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2); }
+    h1 {
+      font-size: 1.8rem;
+      color: #333;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    #roomInfo {
+      font-size: 1.1rem;
+      color: #555;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    #usersJoined {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f3f3f3;
+      border-radius: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    #usersJoined p {
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+    #startQuizBtn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background-color: #6200ea;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      display: none;
+    }
+    #startQuizBtn:hover { background-color: #3700b3; }
+    #quizContainer {
+      display: none;
+      margin-top: 20px;
+    }
+    .option {
+      background-color: #eee;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .option:hover {
+      background-color: #d1c4e9;
+    }
+    .disabled {
+      pointer-events: none;
+      opacity: 0.6;
+    }
+    .questionNumber {
+      text-align: center;
+      font-weight: bold;
+      color: #444;
+      margin-bottom: 10px;
+    }
+    @media (max-width: 500px) {
+      .card { padding: 20px; }
+      h1 { font-size: 1.5rem; }
+      #startQuizBtn { font-size: 0.95rem; }
+    }
+    
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🎉 Welcome to the Quiz!</h1>
+      <p id="roomInfo"></p>
+      <div id="usersJoined"></div>
+      <button id="startQuizBtn">Start Quiz</button>
+      <div id="countdown" style="font-size: 24px; font-weight: bold; margin: 10px;"></div>
+
+      <div id="quizContainer"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const urlParams = new URLSearchParams(window.location.search);
+    const room = urlParams.get("room");
+    const category = urlParams.get("category");
+    const username = sessionStorage.getItem("username") || "User_" + Math.random().toString(36).substring(2, 8);
+    sessionStorage.setItem("username", username);
+
+    const isUser1 = localStorage.getItem("isUser1") === "true";
+    const roomInfo = document.getElementById("roomInfo");
+    const usersJoined = document.getElementById("usersJoined");
+    const startQuizBtn = document.getElementById("startQuizBtn");
+    const quizContainer = document.getElementById("quizContainer");
+
+    roomInfo.innerHTML = `Room: <strong>${room}</strong> | Category: <span style="color: purple;">${category}</span>`;
+    socket.emit("joinRoom", { room, username });
+
+    let userList = [];
+    let currentQuestionIndex = 0;
+    let allQuestions = [];
+
+    function updateStartButtonVisibility() {
+      startQuizBtn.style.display = (isUser1 && userList.length >= 2) ? "block" : "none";
+    }
+
+    function renderUserList() {
+      usersJoined.innerHTML = '';
+      userList.forEach(u => {
+        usersJoined.innerHTML += `<p>👤 User <strong style="color: green">${u}</strong> joined the room.</p>`;
+      });
+    }
+
+    socket.on("userJoined", ({ joinedUsername }) => {
+      if (!userList.includes(joinedUsername)) {
+        userList.push(joinedUsername);
+        renderUserList();
+        updateStartButtonVisibility();
+      }
+    });
+
+    socket.on("roomUsers", (users) => {
+      userList = users;
+      renderUserList();
+      updateStartButtonVisibility();
+    });
+
+    startQuizBtn.addEventListener("click", () => {
+      socket.emit("start-game", { roomCode: room, category });
+    });
+
+    socket.on("game-started", ({ questions }) => {
+      usersJoined.style.display = "none";
+      startQuizBtn.style.display = "none";
+      quizContainer.style.display = "block";
+      allQuestions = questions;
+    });
+
+    socket.on("next-question", ({ questionIndex, question, questionNumber, totalQuestions }) => {
+  currentQuestionIndex = questionIndex;
+  showQuestion(question, questionNumber, totalQuestions);
+  startCountdown(30); // start timer for 30s
+});
+
+
+    function showQuestion(q, number, total) {
+      quizContainer.innerHTML = `
+        <div class="questionNumber">Question ${number} of ${total}</div>
+        <h2>${q.question}</h2>
+      `;
+      q.options.forEach(option => {
+        const btn = document.createElement("div");
+        btn.className = "option";
+        btn.textContent = option;
+        btn.onclick = () => {
+          document.querySelectorAll('.option').forEach(el => el.classList.add('disabled'));
+          // socket.emit("submit-answer", { roomCode: room, questionIndex: currentQuestionIndex, username });
+          socket.emit("submit-answer", {
+            roomCode: room,
+            questionIndex: currentQuestionIndex,
+            username,
+            selectedOption: option
+          });
+
+        };
+        quizContainer.appendChild(btn);
+      });
+    }
+    let countdownInterval;
+
+function startCountdown(seconds) {
+  let timeLeft = seconds;
+  const countdownDiv = document.getElementById("countdown");
+  countdownDiv.innerText = `⏳ Time Left: ${timeLeft}s`;
+
+  clearInterval(countdownInterval); // prevent overlaps
+
+  countdownInterval = setInterval(() => {
+    timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(countdownInterval);
+      countdownDiv.innerText = "⏰ Time's up!";
+      document.querySelectorAll('.option').forEach(el => el.classList.add('disabled'));
+    } else {
+      countdownDiv.innerText = `⏳ Time Left: ${timeLeft}s`;
+    }
+  }, 1000);
+}
+
+socket.on("quiz-ended", ({ scores, winner, allAnswers, questions }) => {
+  clearInterval(countdownInterval);
+  document.getElementById("countdown").innerText = "";
+
+  let scoreboardHTML = `
+    <div style="
+      text-align:center;
+      color:white;
+      background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+      padding:20px;
+      border-radius:15px;
+      box-shadow:0 0 25px rgba(0,255,255,0.7);
+      animation: glow 2s infinite alternate;
+    ">
+      <h2 style="font-size:2rem; margin-bottom:15px;">🚀 Quiz Completed!</h2>
+      <div style="margin-bottom:20px;">
+        ${Object.keys(scores).map(user => `
+          <p style="font-size:1.2rem; margin:8px 0;">
+            👤 <strong style="color:#00e676">${user}</strong> : 
+            <span style="color:#ffeb3b">${scores[user]} pts</span>
+          </p>
+        `).join('')}
+      </div>
+      ${winner === "Draw"
+        ? `<p style="color:orange; font-weight:bold; font-size:1.3rem;">🤝 It's a Draw!</p>`
+        : `<p style="color:#00e5ff; font-weight:bold; font-size:1.3rem;">🏆 Winner: <span style="color:#ff4081">${winner}</span></p>`
+      }
+      <button id="viewScorecardBtn" style="
+        margin-top:20px;
+        padding:12px 20px;
+        font-size:1rem;
+        background:linear-gradient(90deg,#00c6ff,#0072ff);
+        color:white;
+        border:none;
+        border-radius:8px;
+        cursor:pointer;
+        transition:transform 0.2s ease;
+      " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        📜 View Detailed Scorecard
+      </button>
+    </div>
+    <style>
+      @keyframes glow {
+        from { box-shadow: 0 0 10px #00ffff; }
+        to { box-shadow: 0 0 30px #00ffff; }
+      }
+    </style>
+  `;
+
+  quizContainer.innerHTML = scoreboardHTML;
+
+  // Save data for score.html
+  localStorage.setItem("allAnswers", JSON.stringify(allAnswers));
+  localStorage.setItem("scores", JSON.stringify(scores));
+  localStorage.setItem("winner", winner);
+  localStorage.setItem("username", username);
+  localStorage.setItem("questions", JSON.stringify(questions));
+
+  document.getElementById("viewScorecardBtn").onclick = () => {
+    window.location.href = "/score.html";
+  };
+});
+
+
+
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Scorecard</title>
+  <style>
+    .correct { color: green; font-weight: bold; }
+    .wrong { color: red; font-weight: bold; }
+    .winner { font-size: 18px; color: green; font-weight: bold; }
+    .draw { font-size: 18px; color: orange; font-weight: bold; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #6200ea;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .highlight {
+      font-weight: bold;
+      color: green;
+    }
+    .wrong {
+      color: red;
+    }
+    .draw {
+      color: orange;
+      text-align: center;
+    }
+    .winner {
+      color: green;
+      text-align: center;
+      font-weight: bold;
+    }
+    /* ===== Futuristic Buttons ===== */
+.btn-future {
+  --btn-bg1: #0f0c29;      /* deep space */
+  --btn-bg2: #302b63;      /* indigo */
+  --btn-bg3: #24243e;      /* violet */
+  --neon:   #00e5ff;       /* cyan glow */
+  --neon-2: #ff3cac;       /* pink accent */
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  background: linear-gradient(135deg, var(--btn-bg1), var(--btn-bg2), var(--btn-bg3));
+  color: #e9faff;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-decoration: none;
+  cursor: pointer;
+
+  box-shadow:
+    0 0 0 rgba(0,229,255,0),                     /* base */
+    inset 0 0 0 rgba(0,229,255,0);               /* inner */
+  transition: transform 180ms ease, box-shadow 220ms ease, filter 220ms ease;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+
+/* Neon edge & subtle pulse */
+.btn-future::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  background: conic-gradient(from 180deg at 50% 50%, var(--neon), var(--neon-2), var(--neon));
+  filter: blur(18px);
+  opacity: 0.25;
+  z-index: 0;
+  transition: opacity 250ms ease;
+  pointer-events: none;
+  animation: futurePulse 2.2s ease-in-out infinite;
+}
+
+/* Shine sweep on hover */
+.btn-future::after {
+  content: "";
+  position: absolute;
+  top: 0; left: -120%;
+  width: 60%;
+  height: 100%;
+  transform: skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+  opacity: 0;
+  transition: opacity 200ms ease, left 700ms cubic-bezier(.22,.61,.36,1);
+}
+
+/* Hover / Focus effects */
+.btn-future:hover,
+.btn-future:focus-visible {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 30px rgba(0,229,255,.18),
+    0 0 24px rgba(0,229,255,.25),
+    inset 0 0 12px rgba(0,229,255,.15);
+  filter: saturate(1.15);
+}
+
+.btn-future:hover::before { opacity: 0.4; }
+.btn-future:hover::after  { opacity: .9; left: 140%; }
+
+/* Active press */
+.btn-future:active {
+  transform: translateY(0);
+  box-shadow:
+    0 6px 18px rgba(0,229,255,.16),
+    0 0 14px rgba(0,229,255,.22),
+    inset 0 0 10px rgba(0,229,255,.2);
+}
+
+/* Optional variants */
+.btn-future--primary {
+  border-color: rgba(0,229,255,.55);
+  text-shadow: 0 0 8px rgba(0,229,255,.55);
+}
+
+.btn-future--pink {
+  --neon: #ff3cac;
+  --neon-2: #784ba0;
+  border-color: rgba(255,60,172,.5);
+  text-shadow: 0 0 8px rgba(255,60,172,.45);
+}
+
+/* Minimal icon spacing (if you add icons) */
+.btn-future > svg, .btn-future > span.icon {
+  margin-right: 8px;
+}
+
+/* Keyframes */
+@keyframes futurePulse {
+  0%, 100% { transform: scale(1);     opacity: .25; }
+  50%      { transform: scale(1.03);  opacity: .38; }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn-future, .btn-future::before, .btn-future::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <h1>📊 Detailed Scorecard</h1>
+  <div id="summary"></div>
+  <table id="scoreTable">
+    <thead>
+      <tr>
+        <th>Q.No</th>
+        <th>Question</th>
+        <th>Your Answer</th>
+        <th>Opponent's Answer</th>
+        <th>✅ Correct Answer</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <!-- <button><a href="index.html">Home Page</a></button>
+  <button><a href="quiz.html">Play Again</a></button> -->
+  <button class="btn-future btn-future--primary" onclick="window.location='/index.html'">
+  🏠 Home
+</button>
+
+<button class="btn-future btn-future--pink" onclick="window.location='/quiz.html'">
+  🔁 Play Again
+</button>
+
+<script>
+  // Fetch data from localStorage
+  const username = localStorage.getItem("username");
+  const allAnswers = JSON.parse(localStorage.getItem("allAnswers") || "[]");
+  const scores = JSON.parse(localStorage.getItem("scores") || "{}");
+
+  // Detect opponent username
+  const players = Object.keys(scores);
+  const opponentName = players.find(p => p !== username) || "Opponent";
+
+  const tableBody = document.querySelector("tbody");
+
+  if (Array.isArray(allAnswers)) {
+    allAnswers.forEach((entry, index) => {
+      const row = document.createElement("tr");
+
+      const qNo = document.createElement("td");
+      qNo.textContent = index + 1;
+
+      const question = document.createElement("td");
+      question.textContent = entry.question;
+
+      // const yourAnswer = document.createElement("td");
+      // yourAnswer.textContent = entry.answers?.[username] || "";
+
+      const opponentAnswer = document.createElement("td");
+      // opponentAnswer.textContent = entry.answers?.[opponentName] || "";
+
+      const yourAnswer = document.createElement("td");
+      // Determine if this player is user1 or user2
+const isUser1 = localStorage.getItem("isUser1") === "true";
+yourAnswer.textContent = isUser1 ? entry.user1Answer : entry.user2Answer;
+opponentAnswer.textContent = isUser1 ? entry.user2Answer : entry.user1Answer;
+
+
+      const correctAnswer = document.createElement("td");
+      correctAnswer.textContent = entry.correctAnswer;
+
+      // Styling
+      if (yourAnswer.textContent === correctAnswer.textContent) {
+        yourAnswer.classList.add("correct");
+      } else {
+        yourAnswer.classList.add("wrong");
+      }
+
+      if (opponentAnswer.textContent === correctAnswer.textContent) {
+        opponentAnswer.classList.add("correct");
+      } else {
+        opponentAnswer.classList.add("wrong");
+      }
+
+      correctAnswer.classList.add("correct");
+
+      row.appendChild(qNo);
+      row.appendChild(question);
+      row.appendChild(yourAnswer);
+      row.appendChild(opponentAnswer);
+      row.appendChild(correctAnswer);
+
+      tableBody.appendChild(row);
+    });
+  } else {
+    console.error("Could not render answers: allAnswers is undefined or not an array.");
+  }
+</script>
+</body>
+</html>

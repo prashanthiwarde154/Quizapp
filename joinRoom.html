@@ -1,0 +1,124 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Join Room</title>
+</head>
+<body>
+  <h1>Room Joined</h1>
+  <p id="status">Waiting for another player to join...</p>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // Get room code from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room');
+
+    if (!roomCode) {
+      alert('Room code missing');
+      window.location.href = '/';
+    }
+
+    // Join room
+    socket.emit('join-room', roomCode);
+
+    // When another player joins
+    socket.on('user-joined', (userId) => {
+      console.log('Another player joined:', userId);
+      document.getElementById('status').innerText = 'Player joined. Game will start soon...';
+    });
+      socket.on("game-started", (category) => {
+    localStorage.setItem("selectedCategory", category);
+    window.location.href = "quiz.html";
+  });
+  </script>
+</body>
+</html> -->
+
+<!-- Second code -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join Room</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #ffffff1a;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: -0 -8px -20px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+
+    p {
+      font-size: 18px;
+      color: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Room Joined</h1>
+    <p id="status">Waiting for another player to join...</p>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io("http://localhost:5000"); // Make sure backend matches port
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room');
+
+    if (!roomCode) {
+      alert('Room code is missing.');
+      window.location.href = '/';
+    }
+
+    // Join the room
+    socket.emit('join-room', roomCode);
+
+    // Listen when another player joins
+    socket.on('user-joined', (userId) => {
+      console.log('Player joined:', userId);
+      document.getElementById('status').innerText = 'Another player joined. Game will start soon...';
+    });
+
+    // Listen for game start
+    socket.on("game-started", ({ category }) => {
+      console.log("Game started with category:", category);
+
+      // Save data locally
+      localStorage.setItem("roomCode", roomCode);
+      localStorage.setItem("selectedCategory", category);
+      localStorage.setItem("isUser1", "false");
+
+      // Navigate to quiz
+      window.location.href = `quiz.html?room=${roomCode}&category=${category}`;
+    });
+  </script>
+</body>
+</html>
+
